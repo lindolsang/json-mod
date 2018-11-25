@@ -1,9 +1,11 @@
 # json-mod
 
-This is json-mod project
+This project will help you when you access json node
 
-This is for replace original json and make new one using some meta data.
+your code will be shortly to access like below
 
-there is 'identifier field and metadata node'
+jm_object_get_string_member(json_object, 3, "widget", "debug", "image");
 
-[Draft]
+this code will return value of string memeber for below path
+"widget.debug.image"
+
