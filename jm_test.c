@@ -10,22 +10,22 @@
 
 #define ERR(fmt, arg...) \
     ({ do { \
-        printf("E " LOG_TAG " %s: %s(%d) > " fmt, __FILE__, __func__, __LINE__, ##arg); \
+        printf("E " LOG_TAG " %s: %s(%d) > " fmt "\n", __FILE__, __func__, __LINE__, ##arg); \
      } while (0); })
 
 #define DBG(fmt, arg...) \
     ({ do { \
-        printf("D " LOG_TAG " %s: %s(%d) > " fmt, __FILE__, __func__, __LINE__, ##arg); \
+        printf("D " LOG_TAG " %s: %s(%d) > " fmt "\n", __FILE__, __func__, __LINE__, ##arg); \
      } while (0); })
 
 #define INF(fmt, arg...) \
     ({ do { \
-        printf("I " LOG_TAG " %s: %s(%d) > " fmt, __FILE__, __func__, __LINE__, ##arg); \
+        printf("I " LOG_TAG " %s: %s(%d) > " fmt "\n", __FILE__, __func__, __LINE__, ##arg); \
      } while (0); })
 
 #define WRN(fmt, arg...) \
     ({ do { \
-        printf("W " LOG_TAG " %s: %s(%d) > " fmt, __FILE__, __func__, __LINE__, ##arg); \
+        printf("W " LOG_TAG " %s: %s(%d) > " fmt "\n", __FILE__, __func__, __LINE__, ##arg); \
     } while (0); })
 
 const char* jm_object_get_string_member(JsonObject* obj, int length, ...);
@@ -51,7 +51,7 @@ const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
     char *member_str = va_arg(valist, char*);
 
     if (json_object_has_member(c_obj, member_str) == FALSE) {
-        ERR("Invalid member: %s\n", member_str);
+        ERR("Invalid member: %s", member_str);
         return NULL;
     }
 
@@ -61,19 +61,19 @@ const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
         JsonNodeType node_type = json_node_get_node_type(member_node);
         switch (node_type) {
             case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT\n");
+                DBG("JSON_NODE_OBJECT");
                 {
                     c_obj = json_node_get_object(member_node);
                     member_str = va_arg(valist, char*);
                     if (json_object_has_member(c_obj, member_str)) {
                         member_node = json_object_get_member(c_obj, member_str);
                     } else {
-                        ERR("Invalid member: %s\n", member_str);
+                        ERR("Invalid member: %s", member_str);
                     }
                 }
                 break;
             case JSON_NODE_ARRAY:
-                DBG("JSON_NODE_ARRAY\n");
+                DBG("JSON_NODE_ARRAY");
                 {
                     JsonArray* c_arr = json_node_get_array(member_node);
                     member_str = va_arg(valist, char*);
@@ -82,7 +82,7 @@ const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
                 }
                 break;
             case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE\n");
+                DBG("JSON_NODE_VALUE");
                 {
                     // https://developer.gnome.org/gobject/stable/gobject-Type-Information.html#GType
                     GType value_type = json_node_get_value_type(member_node);
@@ -92,10 +92,10 @@ const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
                 }
                 break;
             case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL\n");
+                DBG("JSON_NODE_NULL");
                 break;
             default:
-                WRN("Unsupported type\n");
+                WRN("Unsupported type");
         }
     }
 
@@ -116,41 +116,54 @@ gboolean jm_object_set_string_member(JsonObject* obj, const char* value, int len
     char* member_str = va_arg(valist, char*);
 
     if (json_object_has_member(c_obj, member_str) == FALSE) {
-        ERR("Invalid member: %s\n", member_str);
+        ERR("Invalid member: %s", member_str);
         return is_setted;
     }
 
     JsonNode* member_node = json_object_get_member(c_obj, member_str);
+    gboolean path_is_valid = TRUE;
 
-    for (; i < length; i++) {
+    for (; i < length && path_is_valid; i++) {
         JsonNodeType node_type = json_node_get_node_type(member_node);
         switch (node_type) {
             case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT\n");
+                DBG("JSON_NODE_OBJECT");
                 {
                     c_obj = json_node_get_object(member_node);
                     member_str = va_arg(valist, char*);
                     if (json_object_has_member(c_obj, member_str)) {
                         member_node = json_object_get_member(c_obj, member_str);
                     } else {
-                        ERR("Invalid member: %s\n", member_str);
+                        ERR("Invalid member: %s", member_str);
                     }
                 }
                 break;
             case JSON_NODE_ARRAY:
-                DBG("JSON_NODE_ARRAY\n");
+                DBG("JSON_NODE_ARRAY");
+                {
+                    JsonArray* c_arr = json_node_get_array(member_node); 
+                    member_str = va_arg(valist, char*);
+                    int arr_index = cut_array_index(member_str);
+                    member_node = json_array_get_element(c_arr, arr_index);
+                }
                 break;
             case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE\n");
+                DBG("JSON_NODE_VALUE");
                 {
-                    json_node_set_string(member_node, value);
+                    if (i + 1 < length) {
+                        ERR("Invalid path: %s", member_str);
+                        path_is_valid = FALSE;
+                    } else {
+                        json_node_set_string(member_node, value);
+                        is_setted = TRUE;
+                    }
                 }
                 break;
             case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL\n");
+                DBG("JSON_NODE_NULL");
                 break;
             default:
-                WRN("Unsupported type\n");
+                WRN("Unsupported type");
         }
     }
 
@@ -179,15 +192,19 @@ int test_get(const char* file_name)
     /* manipulate the object tree and then exit */
     JsonObject* obj = json_node_get_object(root);
     const char* title = jm_object_get_string_member(obj, 3, "widget", "window", "title");
-    DBG("title: %s\n", title);
+    DBG("title: %s", title);
     const char* invalid_test = jm_object_get_string_member(obj, 3, "widget", "debug", "image");
-    DBG("message: %s\n", invalid_test);
+    DBG("message: %s", invalid_test);
     const char* hello_0 = jm_object_get_string_member(obj, 3, "widget", "welcome", "[1]");
-    DBG("welcome: %s\n", hello_0);
+    DBG("welcome: %s", hello_0);
     const char* category = jm_object_get_string_member(obj, 6, "widget", "notification", "[1]", "type", "category", "[0]");
-    DBG("category: %s\n", category);
+    DBG("category: %s", category);
     const char* id = jm_object_get_string_member(obj, 5, "widget", "notification", "[1]", "type", "id");
-    DBG("id: %s\n", id);
+    DBG("id: %s", id);
+
+    /* invalid case */
+    const char* name = jm_object_get_string_member(obj, 3, "widget", "debug", "title");
+    DBG("name: %s", name);
 
     g_object_unref(parser);
     return EXIT_SUCCESS;
@@ -230,10 +247,16 @@ int test_set(const char* file_name)
     JsonObject* obj = json_node_get_object(root);
     gboolean is_set = jm_object_set_string_member(obj, "Test Title", 3, "widget", "window", "title");
     if (is_set) {
-        DBG("seted in 'widget.window.title'\n");
+        DBG("seted in 'widget.window.title'");
     } else {
-        DBG("not seted in 'widget.window.title`\n");
+        DBG("not seted in 'widget.window.title`");
     }
+
+    jm_object_set_string_member(obj, "Good morning!", 3, "widget", "welcome", "[1]");
+    jm_object_set_string_member(obj, "배경화면", 6, "widget", "notification", "[0]", "type", "category", "[0]");
+
+    /* invalid case */
+    jm_object_set_string_member(obj, "Keyboard", 6, "widget", "debug", "[0]", "type", "category", "[1]");
 
     /* save output */
     json_save_file(root, "sample_out.json");
@@ -246,7 +269,7 @@ int main(int argc, char* argv[])
 {
 
     if (argc < 2) {
-        ERR("Usage: test <filename.json>\n");
+        ERR("Usage: test <filename.json>");
         return EXIT_FAILURE;
     }
 
