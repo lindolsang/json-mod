@@ -30,6 +30,7 @@
 
 const char* jm_object_get_string_member(JsonObject* obj, int length, ...);
 gboolean jm_object_set_string_member(JsonObject* obj, const char*, int length, ...);
+int jm_object_get_int_member(JsonObject* obj, int length, ...);
 
 int cut_array_index(const char* index_str) {
     char buf[10] = {0, };
@@ -129,12 +130,17 @@ gboolean jm_object_set_string_member(JsonObject* obj, const char* value, int len
             case JSON_NODE_OBJECT:
                 DBG("JSON_NODE_OBJECT");
                 {
-                    c_obj = json_node_get_object(member_node);
-                    member_str = va_arg(valist, char*);
-                    if (json_object_has_member(c_obj, member_str)) {
-                        member_node = json_object_get_member(c_obj, member_str);
+                    if (i + 1 == length) {
+                        DBG("end of path");
                     } else {
-                        ERR("Invalid member: %s", member_str);
+                        c_obj = json_node_get_object(member_node);
+                        member_str = va_arg(valist, char*);
+                        if (json_object_has_member(c_obj, member_str)) {
+                            member_node = json_object_get_member(c_obj, member_str);
+                        } else {
+                            ERR("Invalid member: %s", member_str);
+                            path_is_valid = FALSE;
+                        }
                     }
                 }
                 break;
@@ -170,6 +176,60 @@ gboolean jm_object_set_string_member(JsonObject* obj, const char* value, int len
     va_end(valist);
 
     return is_setted;
+}
+
+int jm_object_get_int_member(JsonObject* obj, int length, ...)
+{
+    va_list valist;
+    int i = 0;
+    int return_value = 0;
+
+    va_start(valist, length);
+
+    char *member_name = va_arg(valist, char*);
+    if (json_object_has_member(obj, member_name) == FALSE) {
+        ERR("Invalid member: %s", member_name);
+        return 0;
+    }
+
+    JsonNode* member_node = json_object_get_member(obj, member_name);
+
+    for (; i < length; i++) {
+        DBG("member: %s", member_name);
+
+        JsonNodeType node_type = json_node_get_node_type(member_node);
+        switch (node_type) {
+            case JSON_NODE_OBJECT:
+                DBG("JSON_NODE_OBJECT");
+                {
+                    member_name = va_arg(valist, char *);
+                    JsonObject* member_obj = json_node_get_object(member_node);
+                    if (json_object_has_member(member_obj, member_name) == FALSE) {
+                        ERR("Invalid member: %s", member_name);
+                        return 0;
+                    }
+                    member_node = json_object_get_member(member_obj, member_name);
+                }
+                break;
+            case JSON_NODE_ARRAY:
+                DBG("JSNO_NODE_ARRAY");
+                break;
+            case JSON_NODE_VALUE:
+                DBG("JSON_NODE_VALUE");
+                {
+                    return_value = json_node_get_int(member_node);
+                }
+                break;
+            case JSON_NODE_NULL:
+                DBG("JSON_NODE_NULL");
+                break;
+            default:
+                WRN("Unsupported type");
+        }
+    }
+
+    va_end(valist);
+    return return_value;
 }
 
 int test_get(const char* file_name)
@@ -246,20 +306,53 @@ int test_set(const char* file_name)
     /* manipulate the object tree and then exit */
     JsonObject* obj = json_node_get_object(root);
     gboolean is_set = jm_object_set_string_member(obj, "Test Title", 3, "widget", "window", "title");
-    if (is_set) {
-        DBG("seted in 'widget.window.title'");
-    } else {
-        DBG("not seted in 'widget.window.title`");
-    }
+    DBG("seted: %s", (is_set ? "true" : "false"));
 
     jm_object_set_string_member(obj, "Good morning!", 3, "widget", "welcome", "[1]");
-    jm_object_set_string_member(obj, "배경화면", 6, "widget", "notification", "[0]", "type", "category", "[0]");
+    jm_object_set_string_member(obj, "Wallpaper", 6, "widget", "notification", "[0]", "type", "category", "[0]");
 
     /* invalid case */
-    jm_object_set_string_member(obj, "Keyboard", 6, "widget", "debug", "[0]", "type", "category", "[1]");
+    is_set = jm_object_set_string_member(obj, "Keyboard", 6, "widget", "debug", "[0]", "type", "category", "[1]");
+    DBG("seted: %s", (is_set ? "true" : "false"));
+    is_set = jm_object_set_string_member(obj, "button2", 4, "widget", "handler", "click", "parametersS");
+    DBG("seted: %s", (is_set ? "true" : "false"));
+    is_set = jm_object_set_string_member(obj, "button2", 4, "widget", "handler", "click", "parameters");
 
     /* save output */
     json_save_file(root, "sample_out.json");
+
+    g_object_unref(parser);
+    return EXIT_SUCCESS;
+}
+
+int test_int_get(const char* file_name)
+{
+    JsonParser *parser;
+    JsonNode *root;
+    GError *error;
+
+    parser = json_parser_new();
+
+    error = NULL;
+    json_parser_load_from_file(parser, file_name, &error);
+    if (error) {
+        g_print("Unable to parse `%s': %s\n", file_name, error->message);
+        g_error_free(error);
+        g_object_unref(parser);
+        return EXIT_FAILURE;
+    }
+
+    root = json_parser_get_root(parser);
+
+    /* manipulate the object tree and then exit */
+    JsonObject* obj = json_node_get_object(root);
+
+    int width = jm_object_get_int_member(obj, 3, "widget", "window", "width");
+    int height = jm_object_get_int_member(obj, 3, "widget", "window", "height");
+    DBG("width: %d, height: %d", width, height);
+    int h_offset = jm_object_get_int_member(obj, 3, "widget", "image", "hOffset");
+    int v_offset = jm_object_get_int_member(obj, 3, "widget", "image", "vOffset");
+    DBG("hOffset: %d, vOffset: %d", h_offset, v_offset);
 
     g_object_unref(parser);
     return EXIT_SUCCESS;
@@ -275,6 +368,7 @@ int main(int argc, char* argv[])
 
     test_get(argv[1]);
     test_set(argv[1]);
+    test_int_get(argv[1]);
 
     return EXIT_SUCCESS;
 }

@@ -51,6 +51,17 @@
                 "message": "Test2!",
                 "length": 128
             }
-        ]
+        ],
+        "handler": {
+            "type": "click",
+            "click": {
+                "id": "btnOnClick",
+                "name": "button",
+                "parameters": {
+                    "evt": "button",
+                    "name": "button1"
+                }
+            }
+        }
     }
 }
