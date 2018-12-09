@@ -38,10 +38,13 @@ How to compile source
 ```shell
 $ gcc -W -Werror -Wall jm_test.c -o jm_test `pkg-config --cflags --libs glib-2.0 json-glib-1.0`
 ```
+or
+```shell
+$ cmake CMakeLists.txt
+$ make
+```
 
 How to run sample code
 ```shell
 $ ./jm_test sample1.json
 ```
-
-
