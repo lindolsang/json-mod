@@ -74,7 +74,7 @@ const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
                 DBG("JSON_NODE_NULL");
                 break;
             default:
-                WRN("Unsupported type");
+                WRN("Unsupported type: %d", node_type);
         }
     }
 
@@ -371,6 +371,16 @@ static int __jm_json_node_build(JsonNode* node, JsonBuilder* builder)
                     case G_TYPE_INT64:
                         {
                             json_builder_add_int_value(builder, json_node_get_int(node));
+                        }
+                        break;
+                    case G_TYPE_DOUBLE:
+                        {
+                            json_builder_add_double_value(builder, json_node_get_double(node));
+                        }
+                        break;
+                    case G_TYPE_BOOLEAN:
+                        {
+                            json_builder_add_boolean_value(builder, json_node_get_boolean(node));
                         }
                         break;
                     default:

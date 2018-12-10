@@ -14,6 +14,19 @@
             "vOffset": 250,
             "alignment": "center"
         },
+        "splash_window": {
+            "splash": {
+                "text": "Please wait..",
+                "size": 22
+            },
+            "property": {
+                "duration": 0.5,
+                "animation": {
+                    "blink": true,
+                    "speed": 0.1
+                }
+            }
+        },
         "text": {
             "data": "Click Here",
             "size": 36,
