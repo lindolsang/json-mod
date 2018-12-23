@@ -409,3 +409,103 @@ JsonNode* jm_node_clone(JsonNode* node)
 
     return return_node;
 }
+
+typedef enum {
+    NODE_VALUE_TYPE_STRING = 0,
+    NODE_VALUE_TYPE_INT,
+} node_value_type_e;
+
+static void* __read_node_value(node_value_type_e read_vt, JsonNode* value_node)
+{
+    GType value_type = json_node_get_value_type(value_node);
+    void *return_v = NULL;
+    static int ret_integer = 0;
+
+    switch (value_type) {
+        case G_TYPE_STRING:
+            return_v = (void *)json_node_get_string(value_node);
+            break;
+        case G_TYPE_INT64:
+            {
+                ret_integer = json_node_get_int(value_node);
+                return_v = &ret_integer;
+            }
+            break;
+        default:
+            // debug
+            __gtype_print(value_type);
+            break;
+    }
+    return return_v;
+}
+
+static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* obj, const char* node_path)
+{
+    // parse node name with token
+    char* buf_node_path = strdup(node_path);
+    char* member_name = NULL;
+    JsonObject* member_obj = obj;
+    void* return_v = NULL;
+
+    member_name = strtok(buf_node_path, ".");
+
+    if (json_object_has_member(member_obj, member_name) == FALSE) {
+        ERR("Invalid member: %s", member_name);
+        free(buf_node_path);
+        return NULL;
+    }
+        
+    JsonNode* member_node = json_object_get_member(obj, member_name);
+    gboolean keep_d = TRUE;
+    for (; member_name && keep_d;) {
+        DBG("member_name: %s", member_name);
+        JsonNodeType member_type = json_node_get_node_type(member_node);
+        switch (member_type) {
+            case JSON_NODE_OBJECT:
+                DBG("JSON_NODE_OBJECT");
+                {
+                    member_obj = json_node_get_object(member_node);
+                    member_name = strtok(NULL, ".");
+                    if (json_object_has_member(member_obj, member_name)) {
+                        member_node = json_object_get_member(member_obj, member_name);
+                    } else {
+                        ERR("Invalid member: %s", member_name);
+                        keep_d = FALSE;
+                    }
+                }
+                break;
+            case JSON_NODE_ARRAY:
+                DBG("JSON_NODE_ARRAY");
+                break;
+            case JSON_NODE_VALUE:
+                DBG("JSON_NODE_VALUE");
+                {
+                    keep_d = FALSE;
+                    return_v = __read_node_value(node_vt, member_node);
+                }
+                break;
+            case JSON_NODE_NULL:
+                DBG("JSON_NODE_NULL");
+                break;
+            default:
+                WRN("Unsupported type: %d", member_type);
+                break;
+        }
+    }
+
+    free(buf_node_path);
+
+    return return_v;
+}
+const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_path)
+{
+    void* n_value = __object_get_member_value(NODE_VALUE_TYPE_STRING, obj, node_path);
+    return (const gchar*)n_value;
+}
+
+int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path)
+{
+    void* n_value = __object_get_member_value(NODE_VALUE_TYPE_INT, obj, node_path);
+    return *((int*)n_value);
+}
+

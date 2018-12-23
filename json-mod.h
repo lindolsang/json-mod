@@ -17,4 +17,21 @@ int jm_object_get_int_member(JsonObject* obj, int length, ...);
   */
 JsonNode* jm_node_clone(JsonNode* node);
 
+/**
+ * @brief This api will return the value that is related about passed node path
+ * @param[in] obj The pointer of the json_object in top level
+ * @param[in] node_path the path string that you need to get
+ * @return string value of the path that you passed with parameter.
+ * if can not be found the value with the node_path, NULL will be returned.
+ */
+const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_path);
+
+/**
+ * @brief This api will return the value that is related about passed node path
+ * @param[in] obj The pointer of the json_object in top level
+ * @param[in] node_path the path string that you need to get
+ * @return integer value of the path that you passed with parameter.
+ */
+int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path);
+
 #endif

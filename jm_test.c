@@ -165,6 +165,34 @@ int test_clone(const char* file_name)
     return EXIT_SUCCESS;
 }
 
+int test_get_with_dot(const char* file_name)
+{
+    JsonParser* parser;
+    JsonNode* root;
+    GError* error;
+
+    parser = json_parser_new();
+    error = NULL;
+    json_parser_load_from_file(parser, file_name, &error);
+    if (error) {
+        ERR("Unable to parse `%s': %s", file_name, error->message);
+        g_error_free(error);
+        g_object_unref(parser);
+        return EXIT_FAILURE;
+    }
+
+    root = json_parser_get_root(parser);
+
+    /* manipulate the object tree and then exit */
+    JsonObject* root_obj = json_node_get_object(root);
+    DBG("widget.debug = %s", jm_object_dot_get_string_member(root_obj, "widget.debug"));
+    DBG("widget.splash_window.splash.size = %d", jm_object_dot_get_int_member(root_obj, "widget.splash_window.splash.size"));
+    DBG("widget.image.hOffset = %d", jm_object_dot_get_int_member(root_obj, "widget.image.hOffset"));
+
+    g_object_unref(parser);
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char* argv[])
 {
 
@@ -177,6 +205,7 @@ int main(int argc, char* argv[])
     //test_set(argv[1]);
     //test_int_get(argv[1]);
     test_clone(argv[1]);
+    test_get_with_dot(argv[1]);
 
     return EXIT_SUCCESS;
 }
