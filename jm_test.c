@@ -188,6 +188,8 @@ int test_get_with_dot(const char* file_name)
     DBG("widget.debug = %s", jm_object_dot_get_string_member(root_obj, "widget.debug"));
     DBG("widget.splash_window.splash.size = %d", jm_object_dot_get_int_member(root_obj, "widget.splash_window.splash.size"));
     DBG("widget.image.hOffset = %d", jm_object_dot_get_int_member(root_obj, "widget.image.hOffset"));
+    DBG("widget.splash_window.property.duration = %f", jm_object_dot_get_double_member(root_obj, "widget.splash_window.property.duration"));
+    DBG("widget.splash_window.property.animation.blink = %s", jm_object_dot_get_boolean_member(root_obj, "widget.splash_window.property.animation.blink") ? "true" : "false");
 
     g_object_unref(parser);
     return EXIT_SUCCESS;

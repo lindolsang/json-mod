@@ -34,4 +34,20 @@ const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_p
  */
 int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path);
 
+/**
+ * @brief This api return the value that is related about passed node_path
+ * @param[in] obj The pointer of the json_object in top level
+ * @param[in] node_path the path string that you need to get
+ * @return double value of the path that you passed with parameter.
+ */
+double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path);
+
+/**
+ * @brief This api return the value that is related about passed node_path
+ * @param[in] obj The pointer of the json_object in top level
+ * @param[in] node_path the path string that you need to get
+ * @return Boolean value of the path that you passed witt parameter
+ * TRUE or FALSE will be returned.
+ */
+gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path);
 #endif

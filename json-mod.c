@@ -413,6 +413,8 @@ JsonNode* jm_node_clone(JsonNode* node)
 typedef enum {
     NODE_VALUE_TYPE_STRING = 0,
     NODE_VALUE_TYPE_INT,
+    NODE_VALUE_TYPE_DOUBLE,
+    NODE_VALUE_TYPE_BOOLEAN
 } node_value_type_e;
 
 static void* __read_node_value(node_value_type_e read_vt, JsonNode* value_node)
@@ -420,6 +422,8 @@ static void* __read_node_value(node_value_type_e read_vt, JsonNode* value_node)
     GType value_type = json_node_get_value_type(value_node);
     void *return_v = NULL;
     static int ret_integer = 0;
+    static double ret_double = 0.0;
+    static gboolean ret_boolean = FALSE;
 
     switch (value_type) {
         case G_TYPE_STRING:
@@ -431,8 +435,21 @@ static void* __read_node_value(node_value_type_e read_vt, JsonNode* value_node)
                 return_v = &ret_integer;
             }
             break;
+        case G_TYPE_DOUBLE:
+            {
+                ret_double = json_node_get_double(value_node);
+                return_v = &ret_double;
+            }
+            break;
+        case G_TYPE_BOOLEAN:
+            {
+                ret_boolean = json_node_get_boolean(value_node);
+                return_v = &ret_boolean;
+            }
+            break;
         default:
             // debug
+            WRN("Unsupported type: %lu", value_type);
             __gtype_print(value_type);
             break;
     }
@@ -458,11 +475,11 @@ static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* ob
     JsonNode* member_node = json_object_get_member(obj, member_name);
     gboolean keep_d = TRUE;
     for (; member_name && keep_d;) {
-        DBG("member_name: %s", member_name);
+        //DBG("member_name: %s", member_name);
         JsonNodeType member_type = json_node_get_node_type(member_node);
         switch (member_type) {
             case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT");
+                //DBG("JSON_NODE_OBJECT");
                 {
                     member_obj = json_node_get_object(member_node);
                     member_name = strtok(NULL, ".");
@@ -475,17 +492,17 @@ static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* ob
                 }
                 break;
             case JSON_NODE_ARRAY:
-                DBG("JSON_NODE_ARRAY");
+                //DBG("JSON_NODE_ARRAY");
                 break;
             case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE");
+                //DBG("JSON_NODE_VALUE");
                 {
                     keep_d = FALSE;
                     return_v = __read_node_value(node_vt, member_node);
                 }
                 break;
             case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL");
+                //DBG("JSON_NODE_NULL");
                 break;
             default:
                 WRN("Unsupported type: %d", member_type);
@@ -507,5 +524,17 @@ int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path)
 {
     void* n_value = __object_get_member_value(NODE_VALUE_TYPE_INT, obj, node_path);
     return *((int*)n_value);
+}
+
+double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path)
+{
+    void* n_value = __object_get_member_value(NODE_VALUE_TYPE_DOUBLE, obj, node_path);
+    return *((double*)n_value);
+}
+
+gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path)
+{
+    void* n_value = __object_get_member_value(NODE_VALUE_TYPE_BOOLEAN, obj, node_path);
+    return *((gboolean*)n_value);
 }
 
