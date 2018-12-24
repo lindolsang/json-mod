@@ -190,6 +190,12 @@ int test_get_with_dot(const char* file_name)
     DBG("widget.image.hOffset = %d", jm_object_dot_get_int_member(root_obj, "widget.image.hOffset"));
     DBG("widget.splash_window.property.duration = %f", jm_object_dot_get_double_member(root_obj, "widget.splash_window.property.duration"));
     DBG("widget.splash_window.property.animation.blink = %s", jm_object_dot_get_boolean_member(root_obj, "widget.splash_window.property.animation.blink") ? "true" : "false");
+    DBG("widget.notification[0].type.id = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[0].type.id"));
+    DBG("widget.notification[0].type.category[1] = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[0].type.category[1]"));
+    DBG("widget.notification[1].type.sub_category[0].value = %s", jm_object_dot_get_boolean_member(root_obj, "widget.notification[1].type.sub_category[0].value") ? "true" : "false");
+    DBG("widget.notification[1].type.sub_category[1].value = %f", jm_object_dot_get_double_member(root_obj, "widget.notification[1].type.sub_category[1].value"));
+    DBG("widget.notification[1].type.sub_category[2].value = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[1].type.sub_category[2].value"));
+    DBG("widget.notification[1].type.sub_category[3].value = %d", jm_object_dot_get_int_member(root_obj, "widget.notification[1].type.sub_category[3].value"));
 
     g_object_unref(parser);
     return EXIT_SUCCESS;

@@ -59,6 +59,24 @@
                     "category": [
                         "internet",
                         "sns"
+                    ],
+                    "sub_category": [
+                        {
+                            "key": "master",
+                            "value": true
+                        },
+                        {
+                            "key": "slave",
+                            "value": 0.12
+                        },
+                        {
+                            "key": "message",
+                            "value": "hello world!"
+                        },
+                        {
+                            "key": "max",
+                            "value": 256
+                        }
                     ]
                 },
                 "message": "Test2!",

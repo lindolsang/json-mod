@@ -456,6 +456,15 @@ static void* __read_node_value(node_value_type_e read_vt, JsonNode* value_node)
     return return_v;
 }
 
+static gboolean __chk_has_array_format(const char* str)
+{
+    if (str == NULL) {
+        WRN("str is NULL");
+        return FALSE;
+    }
+    return (strstr(str, "[") ? TRUE : FALSE);
+}
+
 static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* obj, const char* node_path)
 {
     // parse node name with token
@@ -474,6 +483,8 @@ static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* ob
         
     JsonNode* member_node = json_object_get_member(obj, member_name);
     gboolean keep_d = TRUE;
+    char buf_member_name[256] = {0, };
+    int node_arr_index = 0;
     for (; member_name && keep_d;) {
         //DBG("member_name: %s", member_name);
         JsonNodeType member_type = json_node_get_node_type(member_node);
@@ -483,6 +494,21 @@ static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* ob
                 {
                     member_obj = json_node_get_object(member_node);
                     member_name = strtok(NULL, ".");
+                    if (__chk_has_array_format(member_name)) {
+                        //WRN("member_name has array format");
+                        strncpy(buf_member_name, member_name, 254);
+                        char *arr_c = strstr(buf_member_name, "[");
+                        if (arr_c == NULL) {
+                            ERR("arr_c is NULL");
+                        }
+                        arr_c[0] = '\0';
+                        char* arr_index_c = strstr(member_name, "[");
+                        if (arr_index_c == NULL) {
+                            ERR("arr_index_c is NULL");
+                        }
+                        node_arr_index = cut_array_index(arr_index_c);
+                        member_name = buf_member_name;
+                    }
                     if (json_object_has_member(member_obj, member_name)) {
                         member_node = json_object_get_member(member_obj, member_name);
                     } else {
@@ -493,6 +519,15 @@ static void* __object_get_member_value(node_value_type_e node_vt, JsonObject* ob
                 break;
             case JSON_NODE_ARRAY:
                 //DBG("JSON_NODE_ARRAY");
+                {
+                  JsonArray* member_arr = json_node_get_array(member_node);
+                  int length = json_array_get_length(member_arr);
+                  if (node_arr_index < length) {
+                      member_node = json_array_get_element(member_arr, node_arr_index);
+                  } else {
+                      ERR("Out of index(index, max): (%d, %d)", node_arr_index, length);
+                  }
+                }
                 break;
             case JSON_NODE_VALUE:
                 //DBG("JSON_NODE_VALUE");
