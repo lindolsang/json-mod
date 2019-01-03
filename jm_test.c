@@ -201,6 +201,37 @@ int test_get_with_dot(const char* file_name)
     return EXIT_SUCCESS;
 }
 
+int test_set_with_dot(const char* file)
+{
+    JsonParser* parser = NULL;
+    JsonNode* root = NULL;
+    GError *error = NULL;
+
+    parser = json_parser_new();
+    json_parser_load_from_file(parser, file, &error);
+    if (error) {
+        ERR("Unable to parse `%s': %s\n", file, error->message);
+        g_error_free(error);
+        g_object_unref(parser);
+        return EXIT_FAILURE;
+    }
+
+    root = json_parser_get_root(parser);
+
+    /* manipulate the object tree and then exit */
+    JsonNode* clone = jm_node_clone(root);
+    g_object_unref(parser);
+
+    /* test set */
+    JsonObject* root_obj = json_node_get_object(clone);
+    jm_object_dot_set_string_member(root_obj, "widget.debug", "off");
+
+    json_save_file(clone, "sample1_set.json");
+    json_node_unref(clone);
+
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char* argv[])
 {
 
@@ -214,6 +245,7 @@ int main(int argc, char* argv[])
     //test_int_get(argv[1]);
     test_clone(argv[1]);
     test_get_with_dot(argv[1]);
+    test_set_with_dot(argv[1]);
 
     return EXIT_SUCCESS;
 }

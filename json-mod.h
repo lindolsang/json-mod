@@ -50,4 +50,14 @@ double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path);
  * TRUE or FALSE will be returned.
  */
 gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path);
+
+/**
+ * @brief This api can set value to the node path that has given.
+ * @param[in] obj The pointer of the json_object in top level
+ * @param[in] node_path the path string that needs to set in json
+ * @param[in] value string value to set
+ * @return Boolean if set with node_path is success, return TRUE.
+ */
+gboolean jm_object_dot_set_string_member(JsonObject* obj, const char* node_path, const char* value);
+
 #endif
