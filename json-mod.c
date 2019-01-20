@@ -6,208 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char* jm_object_get_string_member(JsonObject* obj, int length, ...);
-gboolean jm_object_set_string_member(JsonObject* obj, const char*, int length, ...);
-int jm_object_get_int_member(JsonObject* obj, int length, ...);
-
 int cut_array_index(const char* index_str) {
     char buf[10] = {0, };
     snprintf(buf, 10, "%s", index_str + 1);
     int length = strlen(buf);
     buf[length - 1] = '\0';
     return atoi(buf);
-}
-
-const char* jm_object_get_string_member(JsonObject* obj, int length, ...)
-{
-    va_list valist;
-    int i = 0;
-    const char* return_value = NULL;
-
-    va_start(valist, length);
-
-    JsonObject* c_obj = obj;
-    char *member_str = va_arg(valist, char*);
-
-    if (json_object_has_member(c_obj, member_str) == FALSE) {
-        ERR("Invalid member: %s", member_str);
-        return NULL;
-    }
-
-    JsonNode* member_node = json_object_get_member(c_obj, member_str);
-
-    for (; i < length && return_value == NULL; i++) {
-        JsonNodeType node_type = json_node_get_node_type(member_node);
-        switch (node_type) {
-            case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT");
-                {
-                    c_obj = json_node_get_object(member_node);
-                    member_str = va_arg(valist, char*);
-                    if (json_object_has_member(c_obj, member_str)) {
-                        member_node = json_object_get_member(c_obj, member_str);
-                    } else {
-                        ERR("Invalid member: %s", member_str);
-                    }
-                }
-                break;
-            case JSON_NODE_ARRAY:
-                DBG("JSON_NODE_ARRAY");
-                {
-                    JsonArray* c_arr = json_node_get_array(member_node);
-                    member_str = va_arg(valist, char*);
-                    int arr_index = cut_array_index(member_str);
-                    member_node = json_array_get_element(c_arr, arr_index);
-                }
-                break;
-            case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE");
-                {
-                    // https://developer.gnome.org/gobject/stable/gobject-Type-Information.html#GType
-                    GType value_type = json_node_get_value_type(member_node);
-                    if (value_type == G_TYPE_STRING) {
-                        return_value = json_node_get_string(member_node);
-                    }
-                }
-                break;
-            case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL");
-                break;
-            default:
-                WRN("Unsupported type: %d", node_type);
-        }
-    }
-
-    va_end(valist);
-
-    return (i == length) ? return_value : NULL;
-}
-
-gboolean jm_object_set_string_member(JsonObject* obj, const char* value, int length, ...)
-{
-    va_list valist;
-    int i = 0;
-    gboolean is_setted = FALSE;
-
-    va_start(valist, length);
-
-    JsonObject* c_obj = obj;
-    char* member_str = va_arg(valist, char*);
-
-    if (json_object_has_member(c_obj, member_str) == FALSE) {
-        ERR("Invalid member: %s", member_str);
-        return is_setted;
-    }
-
-    JsonNode* member_node = json_object_get_member(c_obj, member_str);
-    gboolean path_is_valid = TRUE;
-
-    for (; i < length && path_is_valid; i++) {
-        JsonNodeType node_type = json_node_get_node_type(member_node);
-        switch (node_type) {
-            case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT");
-                {
-                    if (i + 1 == length) {
-                        DBG("end of path");
-                    } else {
-                        c_obj = json_node_get_object(member_node);
-                        member_str = va_arg(valist, char*);
-                        if (json_object_has_member(c_obj, member_str)) {
-                            member_node = json_object_get_member(c_obj, member_str);
-                        } else {
-                            ERR("Invalid member: %s", member_str);
-                            path_is_valid = FALSE;
-                        }
-                    }
-                }
-                break;
-            case JSON_NODE_ARRAY:
-                DBG("JSON_NODE_ARRAY");
-                {
-                    JsonArray* c_arr = json_node_get_array(member_node);
-                    member_str = va_arg(valist, char*);
-                    int arr_index = cut_array_index(member_str);
-                    member_node = json_array_get_element(c_arr, arr_index);
-                }
-                break;
-            case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE");
-                {
-                    if (i + 1 < length) {
-                        ERR("Invalid path: %s", member_str);
-                        path_is_valid = FALSE;
-                    } else {
-                        json_node_set_string(member_node, value);
-                        is_setted = TRUE;
-                    }
-                }
-                break;
-            case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL");
-                break;
-            default:
-                WRN("Unsupported type");
-        }
-    }
-
-    va_end(valist);
-
-    return is_setted;
-}
-
-int jm_object_get_int_member(JsonObject* obj, int length, ...)
-{
-    va_list valist;
-    int i = 0;
-    int return_value = 0;
-
-    va_start(valist, length);
-
-    char *member_name = va_arg(valist, char*);
-    if (json_object_has_member(obj, member_name) == FALSE) {
-        ERR("Invalid member: %s", member_name);
-        return 0;
-    }
-
-    JsonNode* member_node = json_object_get_member(obj, member_name);
-
-    for (; i < length; i++) {
-        DBG("member: %s", member_name);
-
-        JsonNodeType node_type = json_node_get_node_type(member_node);
-        switch (node_type) {
-            case JSON_NODE_OBJECT:
-                DBG("JSON_NODE_OBJECT");
-                {
-                    member_name = va_arg(valist, char *);
-                    JsonObject* member_obj = json_node_get_object(member_node);
-                    if (json_object_has_member(member_obj, member_name) == FALSE) {
-                        ERR("Invalid member: %s", member_name);
-                        return 0;
-                    }
-                    member_node = json_object_get_member(member_obj, member_name);
-                }
-                break;
-            case JSON_NODE_ARRAY:
-                DBG("JSNO_NODE_ARRAY");
-                break;
-            case JSON_NODE_VALUE:
-                DBG("JSON_NODE_VALUE");
-                {
-                    return_value = json_node_get_int(member_node);
-                }
-                break;
-            case JSON_NODE_NULL:
-                DBG("JSON_NODE_NULL");
-                break;
-            default:
-                WRN("Unsupported type");
-        }
-    }
-
-    va_end(valist);
-    return return_value;
 }
 
 /**
@@ -653,31 +457,31 @@ static gboolean __object_set_member_value(node_value_type_e node_vt, JsonObject*
     return TRUE;
 }
 
-const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_path)
+const gchar* jm_object_get_string(JsonObject* obj, const char* node_path)
 {
     void* n_value = __object_get_member_value(NODE_VALUE_TYPE_STRING, obj, node_path);
     return (const gchar*)n_value;
 }
 
-int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path)
+int jm_object_get_int(JsonObject* obj, const char* node_path)
 {
     void* n_value = __object_get_member_value(NODE_VALUE_TYPE_INT, obj, node_path);
     return *((int*)n_value);
 }
 
-double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path)
+double jm_object_get_double(JsonObject* obj, const char* node_path)
 {
     void* n_value = __object_get_member_value(NODE_VALUE_TYPE_DOUBLE, obj, node_path);
     return *((double*)n_value);
 }
 
-gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path)
+gboolean jm_object_get_boolean(JsonObject* obj, const char* node_path)
 {
     void* n_value = __object_get_member_value(NODE_VALUE_TYPE_BOOLEAN, obj, node_path);
     return *((gboolean*)n_value);
 }
 
-gboolean jm_object_dot_set_string_member(JsonObject* obj, const char* node_path, const char* value)
+gboolean jm_object_set_string(JsonObject* obj, const char* node_path, const char* value)
 {
     __object_set_member_value(NODE_VALUE_TYPE_STRING, obj, node_path, (void*)value);
     return TRUE;

@@ -24,116 +24,6 @@ int json_save_file(JsonNode* root, const char* file_name)
     return EXIT_SUCCESS;
 }
 
-int test_get(const char* file_name)
-{
-    JsonParser *parser;
-    JsonNode *root;
-    GError *error;
-
-    parser = json_parser_new();
-    error = NULL;
-    json_parser_load_from_file(parser, file_name, &error);
-    if (error) {
-        g_print("Unable to parse `%s`: %s\n", file_name, error->message);
-        g_error_free(error);
-        g_object_unref(parser);
-        return EXIT_FAILURE;
-    }
-
-    root = json_parser_get_root(parser);
-    /* manipulate the object tree and then exit */
-    JsonObject* obj = json_node_get_object(root);
-    const char* title = jm_object_get_string_member(obj, 3, "widget", "window", "title");
-    DBG("title: %s", title);
-    const char* invalid_test = jm_object_get_string_member(obj, 3, "widget", "debug", "image");
-    DBG("message: %s", invalid_test);
-    const char* hello_0 = jm_object_get_string_member(obj, 3, "widget", "welcome", "[1]");
-    DBG("welcome: %s", hello_0);
-    const char* category = jm_object_get_string_member(obj, 6, "widget", "notification", "[1]", "type", "category", "[0]");
-    DBG("category: %s", category);
-    const char* id = jm_object_get_string_member(obj, 5, "widget", "notification", "[1]", "type", "id");
-    DBG("id: %s", id);
-
-    /* invalid case */
-    const char* name = jm_object_get_string_member(obj, 3, "widget", "debug", "title");
-    DBG("name: %s", name);
-
-    g_object_unref(parser);
-    return EXIT_SUCCESS;
-}
-
-int test_set(const char* file_name)
-{
-    JsonParser *parser = NULL;
-    JsonNode *root = NULL;
-    GError *error = NULL;
-
-    parser = json_parser_new();
-    error = NULL;
-    json_parser_load_from_file(parser, file_name, &error);
-    if (error) {
-        g_print("Unable to parse `%s`: %s\n", file_name, error->message);
-        g_error_free(error);
-        g_object_unref(parser);
-        return EXIT_FAILURE;
-    }
-
-    root = json_parser_get_root(parser);
-    /* manipulate the object tree and then exit */
-    JsonObject* obj = json_node_get_object(root);
-    gboolean is_set = jm_object_set_string_member(obj, "Test Title", 3, "widget", "window", "title");
-    DBG("seted: %s", (is_set ? "true" : "false"));
-
-    jm_object_set_string_member(obj, "Good morning!", 3, "widget", "welcome", "[1]");
-    jm_object_set_string_member(obj, "Wallpaper", 6, "widget", "notification", "[0]", "type", "category", "[0]");
-
-    /* invalid case */
-    is_set = jm_object_set_string_member(obj, "Keyboard", 6, "widget", "debug", "[0]", "type", "category", "[1]");
-    DBG("seted: %s", (is_set ? "true" : "false"));
-    is_set = jm_object_set_string_member(obj, "button2", 4, "widget", "handler", "click", "parametersS");
-    DBG("seted: %s", (is_set ? "true" : "false"));
-    is_set = jm_object_set_string_member(obj, "button2", 4, "widget", "handler", "click", "parameters");
-
-    /* save output */
-    json_save_file(root, "sample_out.json");
-
-    g_object_unref(parser);
-    return EXIT_SUCCESS;
-}
-
-int test_int_get(const char* file_name)
-{
-    JsonParser *parser;
-    JsonNode *root;
-    GError *error;
-
-    parser = json_parser_new();
-
-    error = NULL;
-    json_parser_load_from_file(parser, file_name, &error);
-    if (error) {
-        g_print("Unable to parse `%s': %s\n", file_name, error->message);
-        g_error_free(error);
-        g_object_unref(parser);
-        return EXIT_FAILURE;
-    }
-
-    root = json_parser_get_root(parser);
-
-    /* manipulate the object tree and then exit */
-    JsonObject* obj = json_node_get_object(root);
-
-    int width = jm_object_get_int_member(obj, 3, "widget", "window", "width");
-    int height = jm_object_get_int_member(obj, 3, "widget", "window", "height");
-    DBG("width: %d, height: %d", width, height);
-    int h_offset = jm_object_get_int_member(obj, 3, "widget", "image", "hOffset");
-    int v_offset = jm_object_get_int_member(obj, 3, "widget", "image", "vOffset");
-    DBG("hOffset: %d, vOffset: %d", h_offset, v_offset);
-
-    g_object_unref(parser);
-    return EXIT_SUCCESS;
-}
-
 int test_clone(const char* file_name)
 {
     JsonParser *parser;
@@ -165,7 +55,7 @@ int test_clone(const char* file_name)
     return EXIT_SUCCESS;
 }
 
-int test_get_with_dot(const char* file_name)
+int test_get(const char* file_name)
 {
     JsonParser* parser;
     JsonNode* root;
@@ -185,23 +75,23 @@ int test_get_with_dot(const char* file_name)
 
     /* manipulate the object tree and then exit */
     JsonObject* root_obj = json_node_get_object(root);
-    DBG("widget.debug = %s", jm_object_dot_get_string_member(root_obj, "widget.debug"));
-    DBG("widget.splash_window.splash.size = %d", jm_object_dot_get_int_member(root_obj, "widget.splash_window.splash.size"));
-    DBG("widget.image.hOffset = %d", jm_object_dot_get_int_member(root_obj, "widget.image.hOffset"));
-    DBG("widget.splash_window.property.duration = %f", jm_object_dot_get_double_member(root_obj, "widget.splash_window.property.duration"));
-    DBG("widget.splash_window.property.animation.blink = %s", jm_object_dot_get_boolean_member(root_obj, "widget.splash_window.property.animation.blink") ? "true" : "false");
-    DBG("widget.notification[0].type.id = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[0].type.id"));
-    DBG("widget.notification[0].type.category[1] = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[0].type.category[1]"));
-    DBG("widget.notification[1].type.sub_category[0].value = %s", jm_object_dot_get_boolean_member(root_obj, "widget.notification[1].type.sub_category[0].value") ? "true" : "false");
-    DBG("widget.notification[1].type.sub_category[1].value = %f", jm_object_dot_get_double_member(root_obj, "widget.notification[1].type.sub_category[1].value"));
-    DBG("widget.notification[1].type.sub_category[2].value = %s", jm_object_dot_get_string_member(root_obj, "widget.notification[1].type.sub_category[2].value"));
-    DBG("widget.notification[1].type.sub_category[3].value = %d", jm_object_dot_get_int_member(root_obj, "widget.notification[1].type.sub_category[3].value"));
+    DBG("widget.debug = %s", jm_object_get_string(root_obj, "widget.debug"));
+    DBG("widget.splash_window.splash.size = %d", jm_object_get_int(root_obj, "widget.splash_window.splash.size"));
+    DBG("widget.image.hOffset = %d", jm_object_get_int(root_obj, "widget.image.hOffset"));
+    DBG("widget.splash_window.property.duration = %f", jm_object_get_double(root_obj, "widget.splash_window.property.duration"));
+    DBG("widget.splash_window.property.animation.blink = %s", jm_object_get_boolean(root_obj, "widget.splash_window.property.animation.blink") ? "true" : "false");
+    DBG("widget.notification[0].type.id = %s", jm_object_get_string(root_obj, "widget.notification[0].type.id"));
+    DBG("widget.notification[0].type.category[1] = %s", jm_object_get_string(root_obj, "widget.notification[0].type.category[1]"));
+    DBG("widget.notification[1].type.sub_category[0].value = %s", jm_object_get_boolean(root_obj, "widget.notification[1].type.sub_category[0].value") ? "true" : "false");
+    DBG("widget.notification[1].type.sub_category[1].value = %f", jm_object_get_double(root_obj, "widget.notification[1].type.sub_category[1].value"));
+    DBG("widget.notification[1].type.sub_category[2].value = %s", jm_object_get_string(root_obj, "widget.notification[1].type.sub_category[2].value"));
+    DBG("widget.notification[1].type.sub_category[3].value = %d", jm_object_get_int(root_obj, "widget.notification[1].type.sub_category[3].value"));
 
     g_object_unref(parser);
     return EXIT_SUCCESS;
 }
 
-int test_set_with_dot(const char* file)
+int test_set(const char* file)
 {
     JsonParser* parser = NULL;
     JsonNode* root = NULL;
@@ -224,7 +114,7 @@ int test_set_with_dot(const char* file)
 
     /* test set */
     JsonObject* root_obj = json_node_get_object(clone);
-    jm_object_dot_set_string_member(root_obj, "widget.debug", "off");
+    jm_object_set_string(root_obj, "widget.debug", "off");
 
     json_save_file(clone, "sample1_set.json");
     json_node_unref(clone);
@@ -240,12 +130,9 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    //test_get(argv[1]);
-    //test_set(argv[1]);
-    //test_int_get(argv[1]);
+    test_get(argv[1]);
+    test_set(argv[1]);
     test_clone(argv[1]);
-    test_get_with_dot(argv[1]);
-    test_set_with_dot(argv[1]);
 
     return EXIT_SUCCESS;
 }

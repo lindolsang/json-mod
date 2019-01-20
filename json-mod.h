@@ -4,9 +4,6 @@
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 
-const char* jm_object_get_string_member(JsonObject* obj, int length, ...);
-gboolean jm_object_set_string_member(JsonObject* obj, const char*, int length, ...);
-int jm_object_get_int_member(JsonObject* obj, int length, ...);
 /**
  This api will make the new JsonNode like clone
  Even if @node has immutable property, returned value will not have immutable.
@@ -24,7 +21,7 @@ JsonNode* jm_node_clone(JsonNode* node);
  * @return string value of the path that you passed with parameter.
  * if can not be found the value with the node_path, NULL will be returned.
  */
-const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_path);
+const gchar* jm_object_get_string(JsonObject* obj, const char* node_path);
 
 /**
  * @brief This api will return the value that is related about passed node path
@@ -32,7 +29,7 @@ const gchar* jm_object_dot_get_string_member(JsonObject* obj, const char* node_p
  * @param[in] node_path the path string that you need to get
  * @return integer value of the path that you passed with parameter.
  */
-int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path);
+int jm_object_get_int(JsonObject* obj, const char* node_path);
 
 /**
  * @brief This api return the value that is related about passed node_path
@@ -40,7 +37,7 @@ int jm_object_dot_get_int_member(JsonObject* obj, const char* node_path);
  * @param[in] node_path the path string that you need to get
  * @return double value of the path that you passed with parameter.
  */
-double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path);
+double jm_object_get_double(JsonObject* obj, const char* node_path);
 
 /**
  * @brief This api return the value that is related about passed node_path
@@ -49,7 +46,7 @@ double jm_object_dot_get_double_member(JsonObject* obj, const char* node_path);
  * @return Boolean value of the path that you passed witt parameter
  * TRUE or FALSE will be returned.
  */
-gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path);
+gboolean jm_object_get_boolean(JsonObject* obj, const char* node_path);
 
 /**
  * @brief This api can set value to the node path that has given.
@@ -58,6 +55,6 @@ gboolean jm_object_dot_get_boolean_member(JsonObject* obj, const char* node_path
  * @param[in] value string value to set
  * @return Boolean if set with node_path is success, return TRUE.
  */
-gboolean jm_object_dot_set_string_member(JsonObject* obj, const char* node_path, const char* value);
+gboolean jm_object_set_string(JsonObject* obj, const char* node_path, const char* value);
 
 #endif

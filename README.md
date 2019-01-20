@@ -4,7 +4,7 @@ This project will help you when you access json node
 
 your code will be shortly to access like below
 
-jm_object_get_string_member(json_object, 3, "widget", "window", "title");
+jm_object_get_string(json_object, "widget.window.title");
 
 this code will return value of string memeber for below path
 "widget.window.title"
@@ -26,7 +26,7 @@ sample json
 
 and when you calls function like below
 ```c
-jm_object_get_string_member(json_object, 3, "widget", "window", "title");
+jm_object_get_string(json_object, "widget.window.title");
 ```
 
 you can get below value
